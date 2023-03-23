@@ -338,6 +338,19 @@ function createHeroDude(scene) {
     });
 }
 
+function createbigg(scene) {
+    
+    var scene = new BABYLON.Scene(engine);  
+
+    BABYLON.SceneLoader.ImportMesh("", "models/bugy/", "Buggy.gltf", scene, function (meshes) {          
+        scene.createDefaultCameraOrLight(true, true, true);
+        scene.createDefaultEnvironment();
+        
+    });
+
+    return scene;
+};
+
 
 function doClone(originalMesh, skeletons, id) {
     let myClone;

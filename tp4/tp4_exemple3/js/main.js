@@ -45,21 +45,184 @@ function createScene() {
 
   let ground = createGround(scene);
   //let freeCamera = createFreeCamera(scene);
+  const gravityVector = new BABYLON.Vector3(0, -9.81, 0);
+  const physicsPlugin = new BABYLON.CannonJSPlugin();
+ scene.enablePhysics(gravityVector, physicsPlugin);
 
-  let tank = createTank(scene);
+  // Génération des positions de maison sur une grille
+  const houseSpacing = 100;
+  const numberOfRows = 5;
+  const numberOfColumns = 5;
+
+  const housePositions = [];
+
+  for (let i = 0; i < numberOfRows; i++) {
+    for (let j = 0; j < numberOfColumns; j++) {
+      housePositions.push({
+        position: new BABYLON.Vector3((i * houseSpacing) - (numberOfRows * houseSpacing) / 2, 0, (j * houseSpacing) - (numberOfColumns * houseSpacing) / 2),
+        rotationY: 0,
+        scaling: new BABYLON.Vector3(2, 2, 2),
+      });
+    }
+  }
+
+
+
+  // Chargement des maisons à partir des modèles et ajout à la scène
+  const houseModelPath = {
+    folder: "models/",
+    file: "House.glb",
+  };
+
+  housePositions.forEach(houseData => {
+    createHouse(scene, houseModelPath, houseData.position, houseData.scaling, new BABYLON.Vector3(0, houseData.rotationY, 0), house => {
+      console.log("Maison chargée et ajoutée à la scène.");
+    });
+  });
+
+
+    // Charger le modèle 3D de l'hélicoptère
+  const helicopterModelPath = {
+    folder: "models/",
+    file: "helipainter.glb"
+  };
+
+  // Fonction pour créer et animer un hélicoptère
+  function createAndAnimateHelicopter(scene, modelPath, position, scaling) {
+    BABYLON.SceneLoader.ImportMesh("", modelPath.folder, modelPath.file, scene, function (meshes) {
+      const helicopter = meshes[0];
+      helicopter.position = position.clone();
+      helicopter.scaling = scaling;
+  
+      // Appliquer la rotation pour inverser l'hélicoptère
+      const yAxis = new BABYLON.Vector3(0, 1, 0); // L'axe Y
+      helicopter.rotate(yAxis, Math.PI, BABYLON.Space.LOCAL);
+  
+      // Animer l'hélicoptère
+      const randomX = Math.random() * 50 - 25;
+      const randomY = Math.random() * 20 + 20;
+      const randomZ = Math.random() * 50 + 1000;
+  
+      const targetPosition = new BABYLON.Vector3(position.x + randomX, position.y + randomY, position.z + randomZ);
+      const animationTime = 350;
+  
+      const animation = new BABYLON.Animation("helicopterAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+  
+      // Création de clés pour l'animation
+      const keys = [];
+      keys.push({
+        frame: 0,
+        value: helicopter.position
+      });
+      keys.push({
+        frame: animationTime,
+        value: targetPosition
+      });
+  
+      // Affectation des clés à l'animation
+      animation.setKeys(keys);
+  
+      // Ajout de l'animation à l'hélicoptère
+      helicopter.animations = [animation];
+  
+      // Démarrage de l'animation
+      scene.beginAnimation(helicopter, 0, animationTime, true);
+    });
+  }
+  
+  
+  
+
+
+// Créer plusieurs instances d'hélicoptères et les animer
+const helicopterScaling = new BABYLON.Vector3(50, 50, 50); // Changer ces valeurs pour ajuster l'échelle du modèle
+
+// Créer plusieurs instances d'hélicoptères et les animer
+  const numHelicopters = 3;
+  for (let i = 0; i < numHelicopters; i++) {
+      const randomX = Math.random() * 100 - 50;
+      const randomY = Math.random() * 20 + 30;
+      const randomZ = Math.random() * 100 - 50;
+      
+      const startPosition = new BABYLON.Vector3(randomX, randomY, randomZ);
+      createAndAnimateHelicopter(scene, helicopterModelPath, startPosition, helicopterScaling);
+  }
+
+
+
+
+
+
+
+  let tankModelPath = "models/tank/source/cyber_tank_futuristiccyberpunk.glb"; // Remplacez ceci par le chemin de votre modèle de tank
+    let tank = createTank(scene, tankModelPath, (loadedTank) => {
+    console.log("ca bien charger.");
+    });
 
   // second parameter is the target to follow
   scene.followCameraTank = createFollowCamera(scene, tank);
   scene.activeCamera = scene.followCameraTank;
 
-  createLights(scene);
+  scene.ambientColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+
+    // Création d'une lumière directionnelle pour une illumination générale faible
+    const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-1, -1, -1), scene);
+    dirLight.intensity = 0.3;
+
+    // Création de quelques lumières ponctuelles pour mettre en évidence certaines zones
+    const pointLight1 = new BABYLON.PointLight("pointLight1", new BABYLON.Vector3(10, 10, 0), scene);
+    pointLight1.intensity = 0.8;
+    pointLight1.range = 50;
+
+    const pointLight2 = new BABYLON.PointLight("pointLight2", new BABYLON.Vector3(-10, 10, 0), scene);
+    pointLight2.intensity = 0.8;
+    pointLight2.range = 50;
+
+    const pointLight3 = new BABYLON.PointLight("pointLight3", new BABYLON.Vector3(0, 10, 10), scene);
+    pointLight3.intensity = 0.8;
+    pointLight3.range = 50;
 
   createHeroDude(scene); // we added the creation of a follow camera for the dude
 
   loadSounds(scene);
 
+  //scene.debugLayer.show();
+
   return scene;
 }
+let houseArray = [];
+function createHouse(scene, modelPath, position, scaling, rotation, onHouseLoaded) {
+  BABYLON.SceneLoader.ImportMesh("", modelPath.folder, modelPath.file, scene, function (meshes) {
+      const importedHouse = meshes[0];
+      importedHouse.position = position;
+      importedHouse.scaling = scaling;
+      importedHouse.rotation = rotation;
+
+      // Activer les collisions pour tous les objets importés
+      meshes.forEach(mesh => {
+          mesh.checkCollisions = true;
+      });
+
+      // Créer une boîte de collision invisible
+      const boundingBox = importedHouse.getBoundingInfo().boundingBox;
+      const size = boundingBox.maximumWorld.subtract(boundingBox.minimumWorld).multiplyByFloats(100, 100, 100);
+      const collisionBox = BABYLON.MeshBuilder.CreateBox("collisionBox", { width: size.x, height: size.y, depth: size.z }, scene);
+      collisionBox.position = position;
+      collisionBox.checkCollisions = true;
+      collisionBox.isVisible = true; // Rendre la boîte de collision invisible
+
+      onHouseLoaded(importedHouse);
+      importedHouse.health = 100;
+      houseArray.push(importedHouse);
+  });
+}
+
+
+
+
+
+
+
 
 function configureAssetManager(scene) {
   // useful for storing references to assets as properties. i.e scene.assets.cannonsound, etc.
@@ -186,7 +349,7 @@ function createGround(scene) {
   //scene is optional and defaults to the current scene
   const ground = BABYLON.MeshBuilder.CreateGroundFromHeightMap(
     "gdhm",
-    "images/hmap2.jpg",
+    "images/hmap1.png",
     groundOptions,
     scene
   );
@@ -196,7 +359,7 @@ function createGround(scene) {
       "groundMaterial",
       scene
     );
-    groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg");
+    groundMaterial.diffuseTexture = new BABYLON.Texture("images/sol.png");
     ground.material = groundMaterial;
     // to be taken into account by collision detection
     ground.checkCollisions = true;
@@ -209,6 +372,7 @@ function createGround(scene) {
       { mass: 0 },
       scene
     );
+
   }
   return ground;
 }
@@ -259,7 +423,7 @@ function createFollowCamera(scene, target) {
   );
 
   // default values
-  camera.radius = 40; // how far from the object to follow
+  camera.radius = 60; // how far from the object to follow
   camera.heightOffset = 14; // how high above the object to place the camera
   camera.rotationOffset = 0; // the viewing angle
   camera.cameraAcceleration = 0.1; // how fast to move
@@ -279,23 +443,9 @@ function createFollowCamera(scene, target) {
 }
 
 let zMovement = 5;
-function createTank(scene) {
-  let tank = new BABYLON.MeshBuilder.CreateBox(
-    "heroTank",
-    { height: 1, depth: 6, width: 6 },
-    scene
-  );
-  let tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
-  tankMaterial.diffuseColor = new BABYLON.Color3.Red();
-  tankMaterial.emissiveColor = new BABYLON.Color3.Blue();
-  tank.material = tankMaterial;
-
-  // tank cannot be picked by rays, but tank will not be pickable by any ray from other
-  // players.... !
-  //tank.isPickable = false;
-
-  // By default the box/tank is in 0, 0, 0, let's change that...
-  tank.position.y = 0.6;
+function createTank(scene, modelName, onModelLoaded) {
+  let tank = new BABYLON.Mesh("heroTank", scene);
+  tank.position.y = 2;
   tank.speed = 1;
   tank.frontVector = new BABYLON.Vector3(0, 0, 1);
 
@@ -309,22 +459,22 @@ function createTank(scene) {
 
     let yMovement = 0;
 
-    if (tank.position.y > 2) {
+    if (tank.position.y > 3) {
       zMovement = 0;
-      yMovement = -2;
+      yMovement = -3;
     }
 
 
     // adjusts y position depending on ground height...
     // create a ray that starts above the dude, and goes down vertically
     let origin = new BABYLON.Vector3(tank.position.x, 1000, tank.position.z);
-    let direction = new BABYLON.Vector3(0, -1, 0);
+    let direction = new BABYLON.Vector3(0, -5, 0);
     let ray = new BABYLON.Ray(origin, direction, 10000);
 
     // compute intersection point with the ground
     let pickInfo = scene.pickWithRay(ray, (mesh) => { return (mesh.name === "gdhm"); });
     let groundHeight = pickInfo.pickedPoint.y;
-    tank.position.y = groundHeight + 1.5;
+    tank.position.y = groundHeight+2;
 
     //tank.moveWithCollisions(new BABYLON.Vector3(0, yMovement, zMovement));
 
@@ -362,7 +512,7 @@ function createTank(scene) {
 
   // to avoid firing too many cannonball rapidly
   tank.canFireCannonBalls = true;
-  tank.fireCannonBallsAfter = 0.1; // in seconds
+  tank.fireCannonBallsAfter = 1.5; // in seconds
 
   tank.fireCannonBalls = function () {
     if (!scene.inputStates.space) return;
@@ -378,24 +528,29 @@ function createTank(scene) {
     }, 1000 * this.fireCannonBallsAfter);
 
     scene.assets.cannonSound.setPosition(tank.position);
-    scene.assets.cannonSound.setVolume(0.7);
+    scene.assets.cannonSound.setVolume(0.5);
     scene.assets.cannonSound.play();
+    // Shake the camera
+    const shakeDuration = 0.2; // Duration in seconds
+    const shakeIntensity = 3; // Intensity of the shake
+    shakeCamera(scene, scene.activeCamera, shakeDuration, shakeIntensity);
+
 
     // Create a canonball
     let cannonball = BABYLON.MeshBuilder.CreateSphere(
       "cannonball",
-      { diameter: 2, segments: 32 },
+      { diameter: 1, segments: 15 },
       scene
     );
     cannonball.material = new BABYLON.StandardMaterial("Fire", scene);
     cannonball.material.diffuseTexture = new BABYLON.Texture(
-      "images/Fire.jpg",
+      "images/black.png",
       scene
     );
 
     let pos = this.position;
     // position the cannonball above the tank
-    cannonball.position = new BABYLON.Vector3(pos.x, pos.y + 1, pos.z);
+    cannonball.position = new BABYLON.Vector3(pos.x, pos.y-1, pos.z);
     // move cannonBall position from above the center of the tank to above a bit further than the frontVector end (5 meter s further)
     cannonball.position.addInPlace(this.frontVector.multiplyByFloats(5, 5, 5));
 
@@ -420,6 +575,8 @@ function createTank(scene) {
     cannonball.physicsImpostor.applyImpulse(aimForceVector, cannonball.getAbsolutePosition());
 
     cannonball.actionManager = new BABYLON.ActionManager(scene);
+
+
     // register an action for when the cannonball intesects a dude, so we need to iterate on each dude
     scene.dudes.forEach((dude) => {
       cannonball.actionManager.registerAction(
@@ -442,6 +599,7 @@ function createTank(scene) {
         )
       );
     });
+
 
     // Make the cannonball disappear after 3s
     setTimeout(() => {
@@ -487,7 +645,7 @@ function createTank(scene) {
 
     // to make the ray visible :
     let rayHelper = new BABYLON.RayHelper(ray);
-    rayHelper.show(scene, new BABYLON.Color3.Red());
+    //rayHelper.show(scene, new BABYLON.Color3.Red());
 
     // to make ray disappear after 200ms
     setTimeout(() => {
@@ -526,8 +684,59 @@ function createTank(scene) {
     }
   };
 
+  BABYLON.SceneLoader.ImportMesh(
+    null,
+    "",
+    modelName,
+    scene,
+    function (meshes, particleSystems, skeletons) {
+      let importedModel = meshes[0];
+      importedModel.parent = tank;
+      importedModel.rotate(BABYLON.Axis.Y, Math.PI, BABYLON.Space.LOCAL); // Utilisez cette ligne à la place
+      importedModel.scaling = new BABYLON.Vector3(3, 3, 3);
+      if (onModelLoaded) {
+        onModelLoaded(tank);
+      }
+    }
+  );
+
   return tank;
 }
+
+function shakeCamera(scene, camera, duration, intensity) {
+  const keyFrames = [];
+  const numberOfFrames = Math.round(duration * 60);
+  const originalPosition = camera.position.clone();
+
+  for (let frame = 0; frame < numberOfFrames; frame++) {
+    const offsetX = (Math.random() - 0.5) * intensity;
+    const offsetY = (Math.random() - 0.5) * intensity;
+    const offsetZ = (Math.random() - 0.5) * intensity;
+
+    const newPosition = originalPosition.add(new BABYLON.Vector3(offsetX, offsetY, offsetZ));
+
+    keyFrames.push({
+      frame: frame,
+      value: newPosition,
+    });
+  }
+
+  const cameraAnimation = new BABYLON.Animation(
+    "cameraShake",
+    "position",
+    60,
+    BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+
+  cameraAnimation.setKeys(keyFrames);
+
+  scene.beginDirectAnimation(camera, [cameraAnimation], 0, numberOfFrames - 1, false, 1, () => {
+    camera.position = originalPosition;
+  });
+}
+
+
 
 function createHeroDude(scene) {
   // load the Dude 3D animated model

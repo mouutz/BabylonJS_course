@@ -4,7 +4,7 @@ export default class Dude {
     this.id = id;
     this.scene = scene;
     this.scaling = scaling;
-    this.health = 3; // three shots to kill the dude !
+    this.health = 1; // three shots to kill the dude !
     this.frontVector = new BABYLON.Vector3(0, 0, -1); // at start dude is facing camera looking to -Z
 
     if (speed) this.speed = speed;
@@ -16,7 +16,7 @@ export default class Dude {
     dudeMesh.Dude = this;
 
     // scaling
-    this.dudeMesh.scaling = new BABYLON.Vector3(0.2, 0.2, 0.2);
+    this.dudeMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
 
     // FOR COLLISIONS, let's associate a BoundingBox to the Dude
 
@@ -52,7 +52,7 @@ export default class Dude {
     );
 
     // adjust y position dependingOn Ground height
-    this.followGround();
+   this.followGround();
 
     // follow the tank
     let tank = scene.getMeshByName("heroTank");
@@ -392,7 +392,7 @@ export default class Dude {
     bounder.scaling.x = (max._x - min._x) * this.scaling;
     bounder.scaling.y = (max._y - min._y) * this.scaling;
     bounder.scaling.z = (max._z - min._z) * this.scaling * 3;
-    //bounder.isVisible = false;
+    bounder.isVisible = false;
 
     bounder.position.y += (max._y - min._y) * this.scaling / 2;
 

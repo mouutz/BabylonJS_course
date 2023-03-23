@@ -14,6 +14,7 @@ function startGame() {
     modifySettings();
 
     let tank = scene.getMeshByName("heroTank");
+    let cam = scene.getCameraByName("tankFollowCamera")
 
     engine.runRenderLoop(() => {
         let deltaTime = engine.getDeltaTime(); // remind you something ?
@@ -23,7 +24,10 @@ function startGame() {
 
         // if we want to move while taking into account collision detections
         // collision uses by default "ellipsoids"
-        tank.moveWithCollisions(new BABYLON.Vector3(0, 0, 1));
+        if(tank.position.y<=1.5)
+            tank.moveWithCollisions(new BABYLON.Vector3(0, 0, 1));
+
+        
         scene.render();
     });
 }
@@ -95,7 +99,7 @@ function createFollowCamera(scene, target) {
 	camera.heightOffset = 40; // how high above the object to place the camera
 	camera.rotationOffset = 180; // the viewing angle
 	camera.cameraAcceleration = .1; // how fast to move
-	camera.maxCameraSpeed = 5; // speed limit
+	camera.maxCameraSpeed = 5;// speed limit
 
     return camera;
 }

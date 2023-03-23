@@ -30,7 +30,11 @@ function createScene() {
     let ground = createGround(scene);
     let freeCamera = createFreeCamera(scene);
 
-    let tank = createTank(scene);
+    let tankModelPath = "models/tank/source/cyber_tank_futuristiccyberpunk.glb"; // Remplacez ceci par le chemin de votre modèle de tank
+    let tank = createTank(scene, tankModelPath, (loadedTank) => {
+    console.log("ca bien charger.");
+    });
+
 
     // second parameter is the target to follow
     let followCamera = createFollowCamera(scene, tank);
@@ -48,7 +52,7 @@ function createGround(scene) {
 
     function onGroundCreated() {
         const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
-        groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg");
+        groundMaterial.diffuseTexture = new BABYLON.Texture("images/herb2.png");
         ground.material = groundMaterial;
         // to be taken into account by collision detection
         ground.checkCollisions = true;
@@ -98,15 +102,9 @@ function createFollowCamera(scene, target) {
 }
 
 let zMovement = 5;
-function createTank(scene) {
-    let tank = new BABYLON.MeshBuilder.CreateBox("heroTank", {height:1, depth:6, width:6}, scene);
-    let tankMaterial = new BABYLON.StandardMaterial("tankMaterial", scene);
-    tankMaterial.diffuseColor = new BABYLON.Color3.Red;
-    tankMaterial.emissiveColor = new BABYLON.Color3.Blue;
-    tank.material = tankMaterial;
-
-    // By default the box/tank is in 0, 0, 0, let's change that...
-    tank.position.y = 0.6;
+function createTank(scene, modelName, onModelLoaded) {
+    let tank = new BABYLON.Mesh("heroTank", scene);
+    tank.position.y = 2;
     tank.speed = 1;
     tank.frontVector = new BABYLON.Vector3(0, 0, 1);
 
@@ -146,7 +144,20 @@ function createTank(scene) {
             tank.frontVector = new BABYLON.Vector3(Math.sin(tank.rotation.y), 0, Math.cos(tank.rotation.y));
         }
     }
-
+    BABYLON.SceneLoader.ImportMesh(
+    null, 
+    "",
+    modelName,
+    scene,
+    function (meshes, particleSystems, skeletons) {
+      let importedModel = meshes[0];
+      importedModel.parent = tank;
+      importedModel.scaling = new BABYLON.Vector3(3, 3, 3);
+      if (onModelLoaded) {
+        onModelLoaded(tank);
+      }
+    }
+  );
     return tank;
 }
 

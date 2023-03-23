@@ -11,11 +11,17 @@ function startGame() {
 
     scene = createScene();
 
-    //let sphere = scene.getMeshByName("mySphere");
+    let sphere = scene.getMeshByName("mySphere");
 
     // main animation loop 60 times/s
     engine.runRenderLoop(() => {
         scene.render();
+
+        // move the sphere on event click 
+        sphere.BABYLON
+
+        
+        
     });
 }
 
@@ -28,7 +34,15 @@ function createScene() {
     // params = number of horizontal "stripes", diameter...
     let sphere = BABYLON.MeshBuilder.CreateSphere("mySphere", {diameter: 2, segments: 32}, scene);
     sphere.position.y = 1;
-
+    //sphere.attachControl(canvas);
+    // create cylindre
+    let cylindre = BABYLON.MeshBuilder.CreateCylinder("myCylindre", {diameter: 2, height: 4, tessellation: 32}, scene);
+    cylindre.position.y = 2;
+    cylindre.position.x = 5;
+    //create rectangle 
+    let rectangle = BABYLON.MeshBuilder.CreateBox("myRectangle", {width: 2, height: 2, depth: 2}, scene);
+    rectangle.position.y=2;
+    rectangle.position.x = 10;
     // a plane
     let ground = BABYLON.MeshBuilder.CreateGround("myGround", {width: 60, height: 60}, scene);
     //console.log(ground.name);
@@ -49,3 +63,4 @@ function createScene() {
 window.addEventListener("resize", () => {
     engine.resize()
 })
+
